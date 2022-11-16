@@ -41,6 +41,53 @@ async function run() {
             res.send(options);
         });
 
+        // Using mongodb aggregate project pipeline
+        app.get('/v2/appoinmentOptions', async (req, res) => {
+            const date = req.query.date;
+            const options = await appoinmentOptionsCollection.aggregate([
+                {
+                    $lookup: {
+                        from: 'bookings',
+                        localField: 'name',
+                        foreignField: 'treatment',
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ['$appoinmentDate', date]
+                                    }
+                                }
+                            }
+                        ],
+                        as: 'booked'
+                    }
+                },
+                {
+                    $project: {
+                        name: 1,
+                        slots: 1,
+                        booked: {
+                            $map: {
+                                input: '$booked',
+                                as: 'book',
+                                in: '$$book.slot'
+                            }
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        name: 1,
+                        slots: {
+                            $setDifference: ['$slots', '$booked']
+                        }
+                    }
+                }
+            ]).toArray();
+            res.send(options);
+        })
+
+
         // git commit -m"API naming convention and save Booking to MongoDB database"
         // booikg post
         app.post('/bookings', async (req, res) => {
