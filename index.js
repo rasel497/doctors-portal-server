@@ -87,15 +87,37 @@ async function run() {
             res.send(options);
         })
 
+        // using for Dashboard tabel
+        app.get('/bookings', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const bookings = await bookingsCollection.find(query).toArray();
+            res.send(bookings);
+        })
 
-        // git commit -m"API naming convention and save Booking to MongoDB database"
+
+
+        // API naming convention and save Booking to MongoDB database
         // booikg post
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
             console.log(booking);
+            const query = {
+                appoinmentDate: booking.appoinmentDate,
+                email: booking.email, // same email diye 1tar beshi service same date same dt nite parbe na
+                treatment: booking.treatment // onnodate nite parbo
+            }
+            const alreadyBooked = await bookingsCollection.find(query).toArray();
+
+            if (alreadyBooked.length) {
+                const message = `You already have a booking on ${booking.appoinmentDate}`;
+                return res.send({ acknowledged: false, message });
+            }
+
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
-        })
+        });
+
     }
     finally {
 
