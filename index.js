@@ -19,6 +19,7 @@ async function run() {
     try {
         const appoinmentOptionsCollection = client.db("doctorsPortal").collection("appoinmentOptions");
         const bookingsCollection = client.db("doctorsPortal").collection("bookings");
+        const usersCollection = client.db("doctorsPortal").collection("users");
 
         // Use aggregate to query multiple collection and then merge data
         // get all inseted data MongoDb!
@@ -115,6 +116,13 @@ async function run() {
             }
 
             const result = await bookingsCollection.insertOne(booking);
+            res.send(result);
+        });
+
+        // using for dashboard users And Save registered user information in the database
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
             res.send(result);
         });
 
