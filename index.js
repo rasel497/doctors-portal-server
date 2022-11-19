@@ -105,7 +105,14 @@ async function run() {
                 }
             ]).toArray();
             res.send(options);
-        })
+        });
+
+        // Add Doctor get
+        app.get('/appointmentSpeciality', async (req, res) => {
+            const query = {};
+            const result = await appoinmentOptionsCollection.find(query).project({ name: 1 }).toArray();
+            res.send(result);
+        });
 
         // using for Dashboard tabel
         app.get('/bookings', verifyJWT, async (req, res) => {
