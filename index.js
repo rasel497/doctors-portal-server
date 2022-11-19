@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -17,19 +17,21 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 // after check jwt localStorage Then decleare this function
-function verifyJWT(res, req, next) {
+function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return res.status(401).send('unauthorized access');
     }
     const token = authHeader.split(' ')[1];
 
-    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) { });
-    if (err) {
-        return res.status(403).send({ message: 'function access' })
-    }
-    req.decoded = decoded;
-    next();
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    });
+
 }
 
 async function run() {
@@ -47,11 +49,11 @@ async function run() {
             const options = await appoinmentOptionsCollection.find(query).toArray();
 
             // code carefully :D
-            const bookingQuery = { appoinmentDate: date }
+            const bookingQuery = { appoinmentDate: date };
             const alreadyBooked = await bookingsCollection.find(bookingQuery).toArray();
             options.forEach(option => {
                 const optionBooked = alreadyBooked.filter(book => book.treatment === option.name);
-                const bookedSlots = optionBooked.map(book => book.slot)
+                const bookedSlots = optionBooked.map(book => book.slot);
                 const remainingSlots = option.slots.filter(slot => !bookedSlots.includes(slot))
                 option.slots = remainingSlots;
                 // console.log(date, option.name, remainingSlots.length);
@@ -154,12 +156,50 @@ async function run() {
             res.send(result);
         });
 
+        // get all user
+        app.get('/users', async (req, res) => {
+            const query = {};
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        });
+
+        // check admin or not Then access
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role == 'admin' });
+        });
+
         // using for dashboard users And Save registered user information in the database
         app.post('/users', async (req, res) => {
             const user = req.body;
+            console.log(user);
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+
+        //  Update set users admin role in update user
+        app.put('/users/admin/:id', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden accesss' })
+            }
+
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc, options)
+            res.send(result);
+        })
 
     }
     finally {
