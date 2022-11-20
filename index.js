@@ -39,6 +39,8 @@ async function run() {
         const appoinmentOptionsCollection = client.db("doctorsPortal").collection("appoinmentOptions");
         const bookingsCollection = client.db("doctorsPortal").collection("bookings");
         const usersCollection = client.db("doctorsPortal").collection("users");
+        const doctorsCollection = client.db("doctorsPortal").collection("doctors");
+
 
         // Use aggregate to query multiple collection and then merge data
         // get all inseted data MongoDb!
@@ -108,7 +110,7 @@ async function run() {
         });
 
         // Add Doctor get
-        app.get('/appointmentSpeciality', async (req, res) => {
+        app.get('/appointmentSpecialty', async (req, res) => {
             const query = {};
             const result = await appoinmentOptionsCollection.find(query).project({ name: 1 }).toArray();
             res.send(result);
@@ -206,7 +208,21 @@ async function run() {
             }
             const result = await usersCollection.updateOne(filter, updateDoc, options)
             res.send(result);
-        })
+        });
+
+        // insert new doctors in form And client side sudu doctor name object toiri korlm ar ekhne api banalam, Tarpor abr clinet side url diye server hit korlm kaj sesh
+        app.post('/doctors', async (req, res) => {
+            const doctor = req.body;
+            const result = await doctorsCollection.insertOne(doctor);
+            res.send(result);
+        });
+
+        // ekhon ami add kora data databse theke server pabo Then client side dekhbo
+        app.get('/doctors', async (req, res) => {
+            const query = {};
+            const doctors = await doctorsCollection.find(query).toArray();
+            res.send(doctors);
+        });
 
     }
     finally {
