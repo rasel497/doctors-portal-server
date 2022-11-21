@@ -41,9 +41,15 @@ async function run() {
         const usersCollection = client.db("doctorsPortal").collection("users");
         const doctorsCollection = client.db("doctorsPortal").collection("doctors");
 
-        // NOTE: Make sure you use verifyAdmin afterJWT
-        const verifyAdmin = (req, res, next) => {
-            console.log('inside verifyAdmin', req.decoded.email);
+        // NOTE: Make sure u use verifyAdmin after verifyJWT
+        const verifyAdmin = async (req, res, next) => {
+            // console.log('inside verifyAdmin', req.decoded.email);
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden accesss' })
+            }
             next();
         }
 
@@ -195,13 +201,14 @@ async function run() {
 
 
         //  Update set users admin role in update user
-        app.put('/users/admin/:id', verifyJWT, async (req, res) => {
-            const decodedEmail = req.decoded.email;
-            const query = { email: decodedEmail };
-            const user = await usersCollection.findOne(query);
-            if (user?.role !== 'admin') {
-                return res.status(403).send({ message: 'forbidden accesss' })
-            }
+        app.put('/users/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            /* verifyAdmin func niye jawr por upore call kore, ei code comment korsi */
+            // const decodedEmail = req.decoded.email;
+            // const query = { email: decodedEmail };
+            // const user = await usersCollection.findOne(query);
+            // if (user?.role !== 'admin') {
+            //     return res.status(403).send({ message: 'forbidden accesss' })
+            // }
 
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
@@ -216,7 +223,7 @@ async function run() {
         });
 
         // insert new doctors in form And client side sudu doctor name object toiri korlm ar ekhne api banalam, Tarpor abr clinet side url diye server hit korlm kaj sesh
-        app.post('/doctors', verifyJWT, async (req, res) => {
+        app.post('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
             const doctor = req.body;
             const result = await doctorsCollection.insertOne(doctor);
             res.send(result);
@@ -230,7 +237,7 @@ async function run() {
         });
 
         // Delete doctors // verify JWT add korsi seshe // erpor verifyAdmin
-        app.delete('/doctors/:id', verifyJWT, async (req, res) => {
+        app.delete('/doctors/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await doctorsCollection.deleteOne(query);
