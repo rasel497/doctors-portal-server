@@ -41,6 +41,11 @@ async function run() {
         const usersCollection = client.db("doctorsPortal").collection("users");
         const doctorsCollection = client.db("doctorsPortal").collection("doctors");
 
+        // NOTE: Make sure you use verifyAdmin afterJWT
+        const verifyAdmin = (req, res, next) => {
+            console.log('inside verifyAdmin', req.decoded.email);
+            next();
+        }
 
         // Use aggregate to query multiple collection and then merge data
         // get all inseted data MongoDb!
@@ -211,17 +216,25 @@ async function run() {
         });
 
         // insert new doctors in form And client side sudu doctor name object toiri korlm ar ekhne api banalam, Tarpor abr clinet side url diye server hit korlm kaj sesh
-        app.post('/doctors', async (req, res) => {
+        app.post('/doctors', verifyJWT, async (req, res) => {
             const doctor = req.body;
             const result = await doctorsCollection.insertOne(doctor);
             res.send(result);
         });
 
         // ekhon ami add kora data databse theke server pabo Then client side dekhbo
-        app.get('/doctors', async (req, res) => {
+        app.get('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {};
             const doctors = await doctorsCollection.find(query).toArray();
             res.send(doctors);
+        });
+
+        // Delete doctors // verify JWT add korsi seshe // erpor verifyAdmin
+        app.delete('/doctors/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await doctorsCollection.deleteOne(query);
+            res.send(result);
         });
 
     }
