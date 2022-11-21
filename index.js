@@ -98,6 +98,7 @@ async function run() {
                 {
                     $project: {
                         name: 1,
+                        price: 1,
                         slots: 1,
                         booked: {
                             $map: {
@@ -111,6 +112,7 @@ async function run() {
                 {
                     $project: {
                         name: 1,
+                        price: 1,
                         slots: {
                             $setDifference: ['$slots', '$booked']
                         }
@@ -221,6 +223,19 @@ async function run() {
             const result = await usersCollection.updateOne(filter, updateDoc, options)
             res.send(result);
         });
+
+        // ADD NEW PROPERTY IN Database Collection Only(server theke): Temporary to update price field on appoinment options
+        // app.get('/addPrice', async (req, res) => {
+        //     const filter = {};
+        //     const options = { upsert: true }
+        //     const updateDoc = {
+        //         $set: {
+        //             price: 99
+        //         }
+        //     }
+        //     const result = await appoinmentOptionsCollection.updateMany(filter, updateDoc, options);
+        //     res.send(result);
+        // });
 
         // insert new doctors in form And client side sudu doctor name object toiri korlm ar ekhne api banalam, Tarpor abr clinet side url diye server hit korlm kaj sesh
         app.post('/doctors', verifyJWT, verifyAdmin, async (req, res) => {
