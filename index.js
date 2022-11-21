@@ -143,6 +143,15 @@ async function run() {
             res.send(bookings);
         });
 
+        // pay option clikc pay work bellow
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingsCollection.findOne(query);
+            res.send(booking);
+        });
+
+
         // using jwt Token
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
