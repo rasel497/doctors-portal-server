@@ -41,6 +41,8 @@ async function run() {
         const bookingsCollection = client.db("doctorsPortal").collection("bookings");
         const usersCollection = client.db("doctorsPortal").collection("users");
         const doctorsCollection = client.db("doctorsPortal").collection("doctors");
+        const paymentsCollection = client.db("doctorsPortal").collection("payments");
+
 
         // NOTE: Make sure u use verifyAdmin after verifyJWT
         const verifyAdmin = async (req, res, next) => {
@@ -206,6 +208,29 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             })
         });
+
+        // payment collection set then fetch client side[CheckoutForm.js] And project ends here
+        // app.post('/payments', async (req, res) => {
+        //     const payment = req.body;
+        //     const result = await paymentsCollection.insertOne(payment);
+        //     res.send(result);
+        // });
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.bookingId;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updatedResult = await bookingsCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
 
         // get all user
         app.get('/users', async (req, res) => {
