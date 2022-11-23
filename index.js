@@ -20,13 +20,15 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 // after check jwt localStorage Then decleare this function
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
+    // console.log(authHeader);
     if (!authHeader) {
         return res.status(401).send('unauthorized access');
     }
     const token = authHeader.split(' ')[1];
-
+    // console.log(token);
     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
         if (err) {
+            console.log(err);
             return res.status(403).send({ message: 'forbidden access' })
         }
         req.decoded = decoded;
